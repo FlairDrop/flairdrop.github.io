@@ -31,12 +31,37 @@
 				</section>
 			</nav>
 			<section class="container" id="app-info-container">
-				<h1 class="title">Welcome to FlairDrop!</h1>	
-				<marquee id="monitoring-status">Coming Soon!  watch <a href="https://www.steemit.com/@saragarmee">@saragarmee</a> for more details...</marquee>
+				<h1 class="title"><a href="https://etherscan.io/address/0xb75e0b03a116ec81ef8c45ddce8a2e049dd5216e">Welcome to FlairDrop!</a></h1>
+				<p><div id="qrcodeCanvas"></div></p>	
+				
 				<h2>What is FlairDrop?</h2>
 				<p>FlairDrop is a tool to assist ERC20 Token creators with airdropping their tokens while avoiding the blockchain congestion that normally happens.</p>
 				<h2>How does FlairDrop work?</h2>
-				<p>FlairDrop is tool with a very simple API.  You submit a source contract, a list of addresses to pay and a list of how much to pay each address.  FlairDrop handles the rest!</p>
+				<p>FlairDrop is tool with a very simple API.  You submit a source contract, a list of addresses to pay and a list of how much to pay each address.  
+					FlairDrop handles the rest!</p>
+				<h2>What tools are available for FlairDrop?</h2>
+				<p>At the moment <a href="https://flairdrop.net/dapp.html">we offer a single tool</a> that allows you to import a list of addresses from any existing ERC20 token, 
+					set an amount to send and the tool handles all the rest!  In the future we expect there to be many other tools built to use the FlairDrop platform.</p>
+				<h2>Is this black magic or something?</h2>
+				<p>No it's not black magic, it isn't any kind of magic.  FlairDrop is completely open source and we encourage you to view the code on <a href="https://etherscan.io/address/0xb75e0b03a116ec81ef8c45ddce8a2e049dd5216e">etherscan.io</a></p>
+				<h3>Can I really save up to 100x on the cost of an air drop?<br>What about increasing blockchain congestion?</h3>
+				<p>It's simple really.  FlairDrops are handled by <a href="https://etherscan.io/address/0xb75e0b03a116ec81ef8c45ddce8a2e049dd5216e"></a>our smart contract</a> in batches of up to 100.  Because these batches are so large and yet sent in 1 single transaction, the cost to transfer is greatly reduced compared to sending one at at time.</p>
+				<h3>Does the tool work right now?</h3>
+				<p>Yes the tool and the contract are fully functional right now.  In order to use it you will need Chrome at least version 69 and you will also need the metamask plugin.  You do not need anything else, the dapp is entirely self contained.</p>
+				<h3>Are Airdrops the only thing FlairDrop can be used for?</h3>
+				<p>Imagine you deployed a smart contract only to find out too late that there was a security flaw.  You didn't put any way in the contract to fix it, so you're forced to redeploy.  But you cannot just take a list of current users and do an airdrop because someone has exploited your flaws.  
+					FlairDrop is the perfect tool.  With FlairDrop, you can set the source contract, and the blockheight before the attack, then set the destination contract.  
+					FlairDrop will do all the hardwork of calculating who had what holdings at that time and literally copy over your contract's holdings all in bulk!  This giveds you peace of mind and serenity when deploying contracts because now you have a do over button!</p>
+				<h3>Won't this tool be abused by airdrop spammers?</h3>
+				<p>The short answer to this is no!  The tool is free to use, but in order to limit spam we have our own token.  It is priced low enough that someone serious about an airdrop won't think twice about using it, but the price is high enough that you'd have to be pretty serious about your spam to want to use it for that.  We're good citizens of the Ethereum economy and our whole reason for existing is to lower the cost of common operations like airdrops.  Letting spammers use the tool would defeat the purpose.</p>
+				<h3>How much do FlairDrops cost?<br>Are you going to have an ICO?</h3>
+				<p>There are currently a million FlairDrops that are pre-minted.  These are inteded as giveaways to worthy projects that would like to do an airdrop but otherwise couldn't afford it.
+					We aren't in this for the money though.  There won't be an ICO.  You can buy FlairDrops today for about $0.004 USD each, just by sending a little Ethereum to the address above.  This is an introductory price to get it into as many hands as possible and let people use the tools.
+					In the end we aren't doing this for the money, but at the end of 90 days we will double the price to buy from the contract to $0.01 USD each.  In the meantime we will be doing a few FlairDrops of our own in order to bring some attention to the tool and the platform and also to demonstrate how it all works.  So stay tuned!  
+				</p>
+				<h3>This all sounds great!  Where can I get more information about your project?  Your team?</h3>
+				<p>Although this project was spun out from a discussion with  <a href="https://www.icosuccess.com">icosuccess.com</a> this project is not officially affiliated with them.  
+					The bulk of the work has been performed by Sara Garmin aka <a href="https://www.steemit.com/@saragarmee">@saragarmee</a> and you can learn more about her from her steemit profile.</p>
 			</section>
 			<footer class="footer">
 				<section class="container">
@@ -45,5 +70,12 @@
 
 		</main>
 		<script src="./js/jquery3.min.js"></script>
+		<script src="./js/jquery.qrcode.js"></script>
+		<script src="./js/qrcode.js"></script>
+		<script>
+			jQuery('#qrcodeCanvas').qrcode({
+				text	: "0xb75e0b03a116ec81ef8c45ddce8a2e049dd5216e"
+			});	
+			</script>
 	</body>
 </html>
