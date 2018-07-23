@@ -11,7 +11,7 @@ const config = {
 	},
 	main:{
 		"socket" : "wss://mainnet.infura.io/ws",
-		"contract" : "0xb75e0b03a116ec81ef8c45ddce8a2e049dd5216e",
+		"contract" : "0x919467ab00d50bb3bbf75cc4e2dd4f74684bb308",
 		"sweepto" : "0x68b971a19b16bddaec7c13198888e66d304c328d"
 	}
 }
