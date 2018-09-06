@@ -69,6 +69,21 @@ async function startApp(){
 	$("#allowance-decline-btn").on("click",onAllowanceDeclineBtn);
 	$("#check-itv").on("change",onChangeITVSetting);
 	$("#qty-per-user").hide();
+	
+	$("input[name='start-sel']").change(function(jq){
+		if($(jq.currentTarget).val() === "start-ctr"){
+			$(".upload-csv").hide();
+			$("#start-area-btn").removeClass("disabled");
+		}else{
+			$(".upload-csv").show();
+			if($("#import-csv-file").val() === ""){
+				$("#start-area-btn").addClass("disabled");
+			}
+		}
+	});
+	$("#import-csv-file").change(function(){
+		$("#start-area-btn").removeClass("disabled");
+	});
 }
 
 async function onSearchBtn(evt){
@@ -177,7 +192,37 @@ async function onStartBtn(evt){
 			break;
 		}
 		case "start-csv" : {
-			alert("Sorry Import by CSV is not implemented yet");
+			$("#loading-area").show();
+			setState("contract-import-review");
+			
+			$('#import-csv-file').parse({
+				config: {
+					// base config to use for each file
+					complete:function(file){
+						file.data.shift(); //Remove Labels
+
+						$('#importTable').DataTable({
+							data: file.data,
+							destroy: true,
+							columns: [
+								{ title: "Address" },
+								{ title: "Amount", className: 'dt-right' }
+							]
+						});
+
+					}
+				}
+			});
+			
+			
+			dataBinds.exportContractAddress = $("#export-csv-lookup-field").val();
+
+			exportDS = new ERC20Token(dataBinds.exportContractAddress,ethconn);
+			await exportDS.Init();
+	
+			handleExportContractBind(exportDS);
+				
+			$("#ready-btn").show();
 			break;
 		}
 	}
@@ -286,6 +331,9 @@ async function onReadyBtn(){
 			{ title: "Status" }
 		]
 	});
+	sendLargeBatch(parent,addresses,amounts);
+}
+async function sendLargeBatch(parent, addresses, amounts){
 	let batchcount = Math.ceil(addresses.length / 100);
 	let failcount = 0;
 	//params.gasPrice = dataBinds.gasPrice;
@@ -311,7 +359,6 @@ async function onReadyBtn(){
 		}while(x < addresses.length);
 	}
 }
-
 async function sendBatch(parent,addresses,amounts){
 	let contract =  dataBinds.flairDropCtr;
 	let params = {
