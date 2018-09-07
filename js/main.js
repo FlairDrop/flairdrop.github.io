@@ -199,7 +199,7 @@ async function onStartBtn(evt){
 				config: {
 					// base config to use for each file
 					complete: async function(file){
-						file.data.shift(); //Remove Labels
+						//file.data.shift(); //Remove Labels
 
 						$('#importTable').DataTable({
 							data: file.data,
@@ -214,19 +214,17 @@ async function onStartBtn(evt){
 						for(let line of file.data){
 							required += parseFloat(line[1]);
 						}
-						dataBinds.exportContractAddress = $("#export-csv-lookup-field").val();
-
-						exportDS = new ERC20Token(dataBinds.exportContractAddress,ethconn);
-						await exportDS.Init();
 						
-						handleExportContractBind(exportDS);
 						dataBinds.exportAllowanceRequired = required;
 					}
 				}
 			});
 			
 			
-			
+			dataBinds.exportContractAddress = $("#export-csv-lookup-field").val();
+			exportDS = new ERC20Token(dataBinds.exportContractAddress,ethconn);
+			await exportDS.Init();
+			handleExportContractBind(exportDS);
 				
 			$("#ready-btn").show();
 			break;
@@ -312,7 +310,7 @@ async function onReadyBtn(){
 	let data = $("#importTable").DataTable().rows().data();
 	
 	let statusData = [];
-	//TODO:  Need to account for decimals of target contract!!! 
+	
 	console.log("data: ",data);
 	for(let x = 0; x <= data.length -1; x++){
 		let pair = data[x];
