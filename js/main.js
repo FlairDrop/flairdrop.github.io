@@ -198,7 +198,7 @@ async function onStartBtn(evt){
 			$('#import-csv-file').parse({
 				config: {
 					// base config to use for each file
-					complete:function(file){
+					complete: async function(file){
 						file.data.shift(); //Remove Labels
 
 						$('#importTable').DataTable({
@@ -209,18 +209,24 @@ async function onStartBtn(evt){
 								{ title: "Amount", className: 'dt-right' }
 							]
 						});
+						console.log("fileData: ",file.data);
+						let required = 0;
+						for(let line of file.data){
+							required += parseFloat(line[1]);
+						}
+						dataBinds.exportContractAddress = $("#export-csv-lookup-field").val();
 
+						exportDS = new ERC20Token(dataBinds.exportContractAddress,ethconn);
+						await exportDS.Init();
+						
+						handleExportContractBind(exportDS);
+						dataBinds.exportAllowanceRequired = required;
 					}
 				}
 			});
 			
 			
-			dataBinds.exportContractAddress = $("#export-csv-lookup-field").val();
-
-			exportDS = new ERC20Token(dataBinds.exportContractAddress,ethconn);
-			await exportDS.Init();
-	
-			handleExportContractBind(exportDS);
+			
 				
 			$("#ready-btn").show();
 			break;
