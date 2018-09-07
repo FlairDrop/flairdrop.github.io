@@ -65,6 +65,11 @@
 					<p><strong>Choose how you want to load addresses</strong></p>
 					<input name="start-sel" type="radio" id="start-ctr" value="start-ctr" checked><label for="start-ctr">Import contract</label><br>
 					<input name="start-sel" type="radio" id="start-csv" value="start-csv"> <label for="start-csv">Upload a CSV</label><br>
+					<div class="upload-csv" style="display:none;">
+						<input type="file" id="import-csv-file" accept=".csv"><br/>
+						<label for="export-lookup-field">AirDrop Contract</label>
+						<input type = "search" id="export-csv-lookup-field" length="32" max-length="48" >
+					</div>
 					<input id="start-area-btn" class="button-primary" type="submit" value="Next">
 			</section>
 			<section class="container" id="start-ctr-area" hidden>
@@ -177,6 +182,7 @@
 
 		<script src="./js/jquery3.min.js"></script>
 		<script src="./js/jquery.dataTables.min.js"></script>
+		<script src="./js/papaparse.js"></script>
 		<script src="./js/web3.min.js"></script>
 		<script src="./js/math.js"></script>
 		<script src="./js/erctoken.js" type="module" ></script>
