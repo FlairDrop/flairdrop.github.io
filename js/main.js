@@ -199,8 +199,9 @@ async function onStartBtn(evt){
 				config: {
 					// base config to use for each file
 					complete: async function(file){
-						//file.data.shift(); //Remove Labels
-
+						while(!file.data[0][0].startsWith("0x")){
+							file.data.shift(); //Remove Labels
+						}
 						$('#importTable').DataTable({
 							data: file.data,
 							destroy: true,
@@ -214,7 +215,7 @@ async function onStartBtn(evt){
 						for(let line of file.data){
 							required += parseFloat(line[1]);
 						}
-						
+						console.log("REQUIRES: ",required);
 						dataBinds.exportAllowanceRequired = required;
 					}
 				}
@@ -310,20 +311,17 @@ async function onReadyBtn(){
 	let data = $("#importTable").DataTable().rows().data();
 	
 	let statusData = [];
-	
 	console.log("data: ",data);
-	for(let x = 0; x <= data.length -1; x++){
+	for(let x=0; x <= data.length -1; x++){
 		let pair = data[x];
 		console.log("pair: ",pair);
-		if(Array.isArray(pair)){
-			addresses.push(pair[0]);
-			let amount = exportDS.Display2Raw(Math.ceil(pair[1]));
-			amounts.push(amount);
-			let statusPair =[];
-			statusPair.push(pair[0]);
-			statusPair.push("waiting...");
-			statusData.push(statusPair);
-		}
+		addresses.push(pair[0]);
+		let amount = exportDS.Display2Raw(Math.ceil(pair[1]));
+		amounts.push(amount);
+		let statusPair =[];
+		statusPair.push(pair[0]);
+		statusPair.push("waiting...");
+		statusData.push(statusPair);
 	}
 	
 	//Here would be a good place have it look for historicals and remove them from the table
@@ -335,8 +333,10 @@ async function onReadyBtn(){
 			{ title: "Status" }
 		]
 	});
+	console.log("readyBtn and addresses is ",addresses);
 	sendLargeBatch(parent,addresses,amounts);
 }
+
 async function sendLargeBatch(parent, addresses, amounts){
 	let batchcount = Math.ceil(addresses.length / 100);
 	let failcount = 0;
@@ -360,7 +360,7 @@ async function sendLargeBatch(parent, addresses, amounts){
 				}
 				console.error("We've failed "+failcount+" of "+batchcount+" times");
 			}//if it fails, we want to resend it.
-		}while(x < addresses.length);
+		}while(x <= addresses.length);
 	}
 }
 async function sendBatch(parent,addresses,amounts){
@@ -368,6 +368,8 @@ async function sendBatch(parent,addresses,amounts){
 	let params = {
 		from : dataBinds.userAccount
 	}
+	params.gasPrice = parseInt(await ethconn["wallet"].eth.getGasPrice());
+	params.gasPrice = ""+(params.gasPrice * 10);
 
 	try{
 		console.log("Sending: ",params);
@@ -376,7 +378,7 @@ async function sendBatch(parent,addresses,amounts){
 		console.log("Addresses: ",JSON.stringify(addresses));
 		
 		//params.gas = await contract.methods.airDrop(parent,amounts,addresses).estimateGas(params);
-		params.gas = Math.floor(currentBlock.gasLimit * 0.99);
+		params.gas = Math.floor(currentBlock.gasLimit * 0.5);
 		let result = await contract.methods.airDrop(parent,amounts,addresses).send(params);
 		//TODO:  Update the display...
 		console.log("Result: ",result);
