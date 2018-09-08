@@ -369,7 +369,7 @@ async function sendBatch(parent,addresses,amounts){
 		from : dataBinds.userAccount
 	}
 	params.gasPrice = parseInt(await ethconn["wallet"].eth.getGasPrice());
-	params.gasPrice = ""+(params.gasPrice * 10);
+	params.gasPrice = ""+(params.gasPrice * 2);
 
 	try{
 		console.log("Sending: ",params);
