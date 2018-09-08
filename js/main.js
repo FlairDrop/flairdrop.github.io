@@ -103,7 +103,6 @@ async function onSearchBtn(evt){
 		await importDS.Init();
 		console.log("importDS.contract: ",importDS.contract);
 		importDS.contract.getPastEvents('Transfer',{fromBlock: 0,toBlock: toBlock},onImportContractHistory);
-
 		exportDS = new ERC20Token(dataBinds.exportContractAddress,ethconn);
 		await exportDS.Init();
 
@@ -199,7 +198,7 @@ async function onStartBtn(evt){
 				config: {
 					// base config to use for each file
 					complete: async function(file){
-						while(!file.data[0][0].startsWith("0x")){
+						if(!file.data[0][0].startsWith("0x")){
 							file.data.shift(); //Remove Labels
 						}
 						$('#importTable').DataTable({
@@ -315,7 +314,7 @@ async function onReadyBtn(){
 	for(let x=0; x <= data.length -1; x++){
 		let pair = data[x];
 		console.log("pair: ",pair);
-		addresses.push(pair[0]);
+		addresses.push(pair[0].toLowerCase());
 		let amount = exportDS.Display2Raw(Math.ceil(pair[1]));
 		amounts.push(amount);
 		let statusPair =[];
