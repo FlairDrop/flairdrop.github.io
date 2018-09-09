@@ -27,6 +27,7 @@ let importDS = {};
 let exportDS = {};
 let currentBlock = {};
 let pendingBatch = [];
+let contract = {};
 
 window.addEventListener('load', function() {
 	startApp();
