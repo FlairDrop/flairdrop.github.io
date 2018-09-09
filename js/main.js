@@ -371,7 +371,7 @@ async function sendLargeBatch(parent, addresses, amounts){
 		let start = 0;
 		let end = 100;
 		do{
-			end = (end > addresses.length) ? (addresses.length) : end;
+			end = (end > addresses.length +1) ? (addresses.length +1) : end;
 			let addrs = addresses.slice(start,end);
 			let amts = amounts.slice(start,end);
 			console.log("Sending batch with "+addrs.length+" entries");
