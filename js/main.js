@@ -28,7 +28,7 @@ let exportDS = {};
 let currentBlock = {};
 let pendingBatch = [];
 let contract = {};
-
+let nonce = 0;
 window.addEventListener('load', function() {
 	startApp();
 });
@@ -353,6 +353,7 @@ async function onReadyBtn(){
 	$("#status-tbl").DataTable( {
 		data: statusData,
 		destroy: true,
+		pageLength: statusData.length,
 		columns: [
 			{ title: "Address" },
 			{ title: "Status" }
@@ -367,15 +368,19 @@ async function sendLargeBatch(parent, addresses, amounts){
 	let batchcount = Math.ceil(addresses.length / 100);
 	let failcount = 0;
 	//params.gasPrice = dataBinds.gasPrice;
+	nonce = parseInt(await ethconn["wallet"].eth.getTransactionCount(dataBinds.userAccount));
+	console.log("nonce is: ",nonce);
 	if(window.confirm("Your wallet will prompt you each time a batch is ready to be sent, there are "+batchcount+" batches.  This is your last chance to cancel")){
 		let start = 0;
 		let end = 100;
 		do{
+			
 			end = (end > addresses.length +1) ? (addresses.length +1) : end;
 			let addrs = addresses.slice(start,end);
 			let amts = amounts.slice(start,end);
-			console.log("Sending batch with "+addrs.length+" entries");
+			console.log("Sending batch with "+addrs.length+" entries and nonce is "+nonce);
 			let result = await sendBatch(parent,addrs,amts);
+
 			//Testing shows scoping didn't work here, possibly the lets above are shadowing something else?
 			//Eitherway they need to be cleared
 				
@@ -393,7 +398,8 @@ async function sendLargeBatch(parent, addresses, amounts){
 				}
 				console.error("We've failed "+failcount+" of 5 times");
 			}
-			
+			nonce++;
+			//end = addresses.length;//TODO:  Remove this once we've proven a 100 batch
 		}while(end < addresses.length);
 	}
 }
@@ -406,8 +412,11 @@ async function sendBatch(parent,addrs,amts){
 	}
 	
 	let params = {
-		from : dataBinds.userAccount
+		from : dataBinds.userAccount,
+		nonce : nonce,
+		gas : 4000000 
 	}
+	//4000000 tested amount for 100 drops
 	params.gasPrice = parseInt(await ethconn["wallet"].eth.getGasPrice());
 	params.gasPrice = ""+(params.gasPrice * 2);
 
@@ -416,13 +425,14 @@ async function sendBatch(parent,addrs,amts){
 		console.log("Parent: ",JSON.stringify(parent));
 		//console.log("Amounts: ",amts);
 		//console.log("Addresses: ",addrs);
-		
-		//params.gas = await contract.methods.airDrop(parent,amts,addrs).estimateGas(params);
-		params.gas = Math.floor(currentBlock.gasLimit * 0.5);
-		let result = await contract.methods.airDrop(parent,amts,addrs).send(params);
-		//let result = parent+" : "+amts.length+" : "+addrs.length;
-		//TODO:  Update the display...
-		console.log("Result: ",result);
+	
+		contract.methods.airDrop(parent,amts,addrs).send(params)
+		.on('transactionHash', (hash)=>{
+			pendingBatch[hash] = true;
+		})
+		.on('receipt', (receipt)=>{
+			markConfirmed(receipt);
+		});
 		return true;
 	}catch(err){
 		console.error(err);
@@ -431,6 +441,45 @@ async function sendBatch(parent,addrs,amts){
 	}
 }
 
+async function markConfirmed(rcpt){
+	//Get the transaction logs
+	delete pendingBatch[rcpt.transactionHash];
+	console.log(rcpt.transactionHash+" has completed successfully!");
+	console.log("rcpt: ",rcpt);
+	let events = rcpt.events;
+	let addrs = [];
+	for(event of events["Transfer"]){
+		let vals = event.returnValues;
+		addrs.push(vals["to"]);
+	}
+	console.log("addrs: ",addrs);
+	//Get the data-table data rows
+	let statusData = $("#status-tbl").DataTable().rows().data();
+	//Mark transfers in the data-table as confirmed
+	let data = [];
+	for(let x = 0; x<= statusData.length -1; x++){
+		let row = statusData[x];
+		let addr = row[0];
+		if(addrs.includes(addr)){
+			statusData[x][1] = "CONFIRMED!";
+		}
+		data.push(statusData[x]);
+	}
+
+	$("#status-tbl").DataTable( {
+		data: data,
+		destroy: true,
+		pageLength: statusData.length,
+		columns: [
+			{ title: "Address" },
+			{ title: "Status" }
+		]
+	});
+
+	if(pendingBatch.length == 0){
+		alert("Thank you for using FlairDrop, your FlairDrop is now complete, but it may take a little time to finalize on the blockchain!");
+	}
+}
 async function onAllowanceApproveBtn(){
 	setState("allowance-form-only");
 	let contract = exportDS.contract;
