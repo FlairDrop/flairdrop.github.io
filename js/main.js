@@ -374,7 +374,6 @@ async function sendLargeBatch(parent, addresses, amounts){
 		let start = 0;
 		let end = 100;
 		do{
-			
 			end = (end > addresses.length +1) ? (addresses.length +1) : end;
 			let addrs = addresses.slice(start,end);
 			let amts = amounts.slice(start,end);
@@ -400,7 +399,7 @@ async function sendLargeBatch(parent, addresses, amounts){
 			}
 			nonce++;
 			//end = addresses.length;//TODO:  Remove this once we've proven a 100 batch
-		}while(end < addresses.length);
+		}while(end <= addresses.length+50);
 	}
 }
 async function sendBatch(parent,addrs,amts){
