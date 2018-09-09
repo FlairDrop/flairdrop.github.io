@@ -366,10 +366,9 @@ async function onReadyBtn(){
 
 async function sendLargeBatch(parent, addresses, amounts){
 	let batchcount = Math.ceil(addresses.length / 100);
-	let failcount = 0;
-	//params.gasPrice = dataBinds.gasPrice;
+	
 	nonce = parseInt(await ethconn["wallet"].eth.getTransactionCount(dataBinds.userAccount));
-	console.log("nonce is: ",nonce);
+	console.log("starting nonce is: ",nonce);
 	if(window.confirm("Your wallet will prompt you each time a batch is ready to be sent, there are "+batchcount+" batches.  This is your last chance to cancel")){
 		let start = 0;
 		let end = 100;
@@ -377,32 +376,23 @@ async function sendLargeBatch(parent, addresses, amounts){
 			end = (end > addresses.length +1) ? (addresses.length +1) : end;
 			let addrs = addresses.slice(start,end);
 			let amts = amounts.slice(start,end);
-			console.log("Sending batch with "+addrs.length+" entries and nonce is "+nonce);
-			let result = await sendBatch(parent,addrs,amts);
-
-			//Testing shows scoping didn't work here, possibly the lets above are shadowing something else?
-			//Eitherway they need to be cleared
-				
-			addrs = [];
-			amts = [];
-			//let result = true;
-			if(result){
-				start = end;
-				end += 100;
-				
-			}else{
-				//if it fails, we want to resend it, but not infintely, 5 is enough to not be annoying
-				if(failcount++ >= 5){
-					break;
-				}
-				console.error("We've failed "+failcount+" of 5 times");
-			}
-			nonce++;
-			//end = addresses.length;//TODO:  Remove this once we've proven a 100 batch
+			console.log("Pushing batch with "+addrs.length+" entries and nonce is "+nonce);
+			pendingBatch.push({
+				addrs : addrs,
+				amts: amts,
+				nonce: nonce++
+			});
+			start = end;
+			end += 100;
 		}while(end <= addresses.length+50);
+		console.log("Have "+pendingBatch.length+" batches left to send");
+		let batch = pendingBatch.shift();
+		let result = await sendBatch(parent,batch);
 	}
 }
-async function sendBatch(parent,addrs,amts){
+async function sendBatch(parent,batch){
+	let addrs = batch.addrs;
+	let amts = batch.amts;
 	let contract = dataBinds.flairDropCtr;
 	if(addrs.length > 100){
 		alert("Addresses cannot be more than 100 but you are sending "+addrs.length);
@@ -412,7 +402,7 @@ async function sendBatch(parent,addrs,amts){
 	
 	let params = {
 		from : dataBinds.userAccount,
-		nonce : nonce,
+		nonce : batch.nonce,
 		gas : 4000000 
 	}
 	//4000000 tested amount for 100 drops
@@ -427,7 +417,15 @@ async function sendBatch(parent,addrs,amts){
 	
 		contract.methods.airDrop(parent,amts,addrs).send(params)
 		.on('transactionHash', (hash)=>{
-			pendingBatch[hash] = true;
+			console.log("submitted: ",hash);
+			console.log("Have "+pendingBatch.length+" batches left to send");
+			if(pendingBatch.length >= 1){
+				let nextBatch = pendingBatch.shift();
+				console.log("NextBatch: ", nextBatch);
+				sendBatch(parent,nextBatch);
+			}else{
+				alert("All members of this FlairDrop have been submitted to metamask for signing!");
+			}
 		})
 		.on('receipt', (receipt)=>{
 			markConfirmed(receipt);
@@ -442,7 +440,6 @@ async function sendBatch(parent,addrs,amts){
 
 async function markConfirmed(rcpt){
 	//Get the transaction logs
-	delete pendingBatch[rcpt.transactionHash];
 	console.log(rcpt.transactionHash+" has completed successfully!");
 	console.log("rcpt: ",rcpt);
 	let events = rcpt.events;
