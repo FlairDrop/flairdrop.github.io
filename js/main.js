@@ -201,8 +201,35 @@ async function onStartBtn(evt){
 						if(!file.data[0][0].startsWith("0x")){
 							file.data.shift(); //Remove Labels
 						}
+
+						let data = file.data;
+						let finalData = [];
+						let rejects = [];
+						let required = 0;
+						//Loop through and check for bad addresses, add to a .csv
+						for(let row of data){
+							let address = row[0].toLowerCase().trim();
+							if(ethconn["wallet"].utils.isAddress(address)){
+								row[0] = address;
+								required += parseFloat(row[1]);
+								finalData.push(row);
+							}else{
+								rejects.push(row);
+							}
+						}
+						console.log("finalImportData: ",finalData);
+						console.log("rejected imports: ",rejects);
+						if(rejects.length){
+							alert("There were "+rejects.length+" rejects in the import, these will be downloaded to you as rejects.csv and will not be included in the FlairDrop.  You may need to allow popups for the download to proceed.");
+							let csvContent = "data:text/csv;charset=utf-8,";
+							rejects.forEach((rowArray)=>{
+								let row = rowArray.join(",");
+								csvContent += row + "\r\n";
+							}); 
+							await window.open(encodeURI(csvContent));
+						}
 						$('#importTable').DataTable({
-							data: file.data,
+							data: finalData,
 							destroy: true,
 							columns: [
 								{ title: "Address" },
@@ -210,10 +237,8 @@ async function onStartBtn(evt){
 							]
 						});
 						console.log("fileData: ",file.data);
-						let required = 0;
-						for(let line of file.data){
-							required += parseFloat(line[1]);
-						}
+						
+						
 						console.log("REQUIRES: ",required);
 						dataBinds.exportAllowanceRequired = required;
 					}
@@ -313,9 +338,9 @@ async function onReadyBtn(){
 	console.log("data: ",data);
 	for(let x=0; x <= data.length -1; x++){
 		let pair = data[x];
-		console.log("pair: ",pair);
+		//console.log("pair: ",pair);
 		addresses.push(pair[0].toLowerCase());
-		let amount = exportDS.Display2Raw(Math.ceil(pair[1]));
+		let amount = exportDS.Display2Raw(pair[1]);
 		amounts.push(amount);
 		let statusPair =[];
 		statusPair.push(pair[0]);
@@ -334,6 +359,7 @@ async function onReadyBtn(){
 	});
 	console.log("readyBtn and addresses is ",addresses);
 	sendLargeBatch(parent,addresses,amounts);
+	//alert("Sending Disabled for this test, please check the console button and verify");
 }
 
 async function sendLargeBatch(parent, addresses, amounts){
@@ -341,29 +367,42 @@ async function sendLargeBatch(parent, addresses, amounts){
 	let failcount = 0;
 	//params.gasPrice = dataBinds.gasPrice;
 	if(window.confirm("Your wallet will prompt you each time a batch is ready to be sent, there are "+batchcount+" batches.  This is your last chance to cancel")){
-		let x = 0;
+		let start = 0;
+		let end = 100;
 		do{
-			let start = x;
-			let end = 99 + x;
-			end = (end > addresses.length -1) ? (addresses.length -1) : end;
+			end = (end > addresses.length) ? (addresses.length) : end;
 			let addrs = addresses.slice(start,end);
 			let amts = amounts.slice(start,end);
-			console.log("Sending batch...");
+			console.log("Sending batch with "+addrs.length+" entries");
 			let result = await sendBatch(parent,addrs,amts);
-			if(result){
-				x += 100;
-			}else{
+			//Testing shows scoping didn't work here, possibly the lets above are shadowing something else?
+			//Eitherway they need to be cleared
 				
-				if(failcount++ >= batchcount){
+			addrs = [];
+			amts = [];
+			//let result = true;
+			if(result){
+				start = end;
+				end += 100;
+				
+			}else{
+				//if it fails, we want to resend it, but not infintely, 5 is enough to not be annoying
+				if(failcount++ >= 5){
 					break;
 				}
-				console.error("We've failed "+failcount+" of "+batchcount+" times");
-			}//if it fails, we want to resend it.
-		}while(x <= addresses.length);
+				console.error("We've failed "+failcount+" of 5 times");
+			}
+			
+		}while(end < addresses.length);
 	}
 }
-async function sendBatch(parent,addresses,amounts){
-	let contract =  dataBinds.flairDropCtr;
+async function sendBatch(parent,addrs,amts){
+	if(addrs.length > 100){
+		alert("Addresses cannot be more than 100 but you are sending "+addrs.length);
+		console.log(addrs);
+		return false;
+	}
+	
 	let params = {
 		from : dataBinds.userAccount
 	}
@@ -373,12 +412,13 @@ async function sendBatch(parent,addresses,amounts){
 	try{
 		console.log("Sending: ",params);
 		console.log("Parent: ",JSON.stringify(parent));
-		console.log("Amounts: ",JSON.stringify(amounts));
-		console.log("Addresses: ",JSON.stringify(addresses));
+		//console.log("Amounts: ",amts);
+		//console.log("Addresses: ",addrs);
 		
-		//params.gas = await contract.methods.airDrop(parent,amounts,addresses).estimateGas(params);
+		//params.gas = await contract.methods.airDrop(parent,amts,addrs).estimateGas(params);
 		params.gas = Math.floor(currentBlock.gasLimit * 0.5);
-		let result = await contract.methods.airDrop(parent,amounts,addresses).send(params);
+		let result = await contract.methods.airDrop(parent,amts,addrs).send(params);
+		//let result = parent+" : "+amts.length+" : "+addrs.length;
 		//TODO:  Update the display...
 		console.log("Result: ",result);
 		return true;
@@ -408,7 +448,9 @@ async function onAllowanceApproveBtn(){
 	let params = {
 		from : dataBinds.userAccount
 	}
-	params.gasPrice = dataBinds.gasPrice;
+	//Recommended gas is way too low, need to up it 
+	params.gasPrice = parseInt(await ethconn["wallet"].eth.getGasPrice());
+	params.gasPrice = ""+(4 * params.gasPrice);
 	params.gas = await contract.methods.approve(spender,required.toString()).estimateGas(params);
 
 	console.log("sending allowance approval with params: ",params);
@@ -454,7 +496,7 @@ async function updateAllowances(){
 		
 		let pair = data[x];
 		pair[1] = target;
-		console.log("pair: ",pair);
+		//console.log("pair: ",pair);
 		newData.push(pair);
 	}
 
