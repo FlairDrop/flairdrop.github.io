@@ -398,6 +398,7 @@ async function sendLargeBatch(parent, addresses, amounts){
 	}
 }
 async function sendBatch(parent,addrs,amts){
+	let contract = dataBinds.flairDropCtr;
 	if(addrs.length > 100){
 		alert("Addresses cannot be more than 100 but you are sending "+addrs.length);
 		console.log(addrs);
