@@ -384,7 +384,7 @@ async function sendLargeBatch(parent, addresses, amounts){
 			});
 			start = end;
 			end += 100;
-		}while(end <= addresses.length+50);
+		}while(start <= addresses.length);
 		console.log("Have "+pendingBatch.length+" batches left to send");
 		let batch = pendingBatch.shift();
 		let result = await sendBatch(parent,batch);
