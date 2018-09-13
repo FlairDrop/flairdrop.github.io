@@ -37,12 +37,17 @@ async function startApp(){
 	if (window.jQuery) {  
 		console.log("JQuery is loaded");
 	}
-	
+	if(window.ethereum){
+		await window.ethereum.enable();
+	}
 	// Checking if Web3 has been injected by the browser (Mist/MetaMask)
 	if (typeof web3 !== 'undefined') {
 		// Use Mist/MetaMask's provider
 		ethconn["wallet"] = await new Web3(web3.currentProvider);
 		console.log("Using MetaMask or Mist Provider");
+	}else{
+		console.log("No provider available!");
+		return
 	}
 	dataBinds.userNetwork = await ethconn["wallet"].eth.net.getNetworkType();
 	
@@ -51,9 +56,14 @@ async function startApp(){
 	setState("landing");
 	
 	let userAccounts = await ethconn["wallet"].eth.getAccounts();
-	dataBinds.userAccount = userAccounts[0];
-	console.log("User Account: ",dataBinds.userAccount);
-
+	if(userAccounts && userAccounts.length >=1){
+		console.log("userAccounts: ",userAccounts);
+		dataBinds.userAccount = userAccounts[0];
+		console.log("User Account: ",dataBinds.userAccount);
+	}else{
+		console.log("We got an empty response for userAccount, need to beg permission");
+		console.log("window.ethereum: ",window.ethereum);
+	}
 	flairDropAbi = await fetch("./js/abi.json");
 
 	flairDropAbi = await flairDropAbi.json();
